@@ -2,16 +2,29 @@
 
 import { useState } from "react";
 
-export default function Filters({ onFilterChange }: { onFilterChange: (filters: any) => void }) {
-  const [rover, setRover] = useState("Curiosity");
-  const [camera, setCamera] = useState("");
-  const [date, setDate] = useState("2020-07-01");
+// Definindo tipos
+interface FiltersProps {
+  onFilterChange: (filters: FilterState) => void;
+}
 
-  const handleChange = (field: string, value: string) => {
-    const newFilters = { rover, camera, date, [field]: value };
-    if (field === "rover") setRover(value);
-    if (field === "camera") setCamera(value);
+export interface FilterState {
+  rover: "Curiosity" | "Opportunity" | "Spirit";
+  camera: "" | "FHAZ" | "RHAZ" | "MAST" | "CHEMCAM" | "NAVCAM";
+  date: string;
+}
+
+export default function Filters({ onFilterChange }: FiltersProps) {
+  const [rover, setRover] = useState<FilterState["rover"]>("Curiosity");
+  const [camera, setCamera] = useState<FilterState["camera"]>("");
+  const [date, setDate] = useState<string>("2020-07-01");
+
+  const handleChange = (field: keyof FilterState, value: string) => {
+    const newFilters: FilterState = { rover, camera, date, [field]: value } as FilterState;
+
+    if (field === "rover") setRover(value as FilterState["rover"]);
+    if (field === "camera") setCamera(value as FilterState["camera"]);
     if (field === "date") setDate(value);
+
     onFilterChange(newFilters);
   };
 

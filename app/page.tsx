@@ -1,43 +1,92 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "./components/header";
 import Footer from "./components/footer";
-import Filters from "./components/filters";
+import Filters, { FilterState } from "./components/filters";
 import Gallery from "./components/gallery";
 import Pagination from "./components/pagination";
 
+/** Tipo final usado no Gallery */
+export interface Photo {
+  id: number;
+  img_src: string;
+  earth_date: string;
+  camera: { full_name: string };
+  rover: { name: string };
+}
+
+/** Tipo bruto vindo da API */
+interface RawPhoto {
+  id: number;
+  img_src: string;
+  earth_date: string;
+  camera: { full_name: string };
+  rover: { name: string };
+}
+
 export default function Home() {
-  const [photos, setPhotos] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({ rover: "Curiosity", camera: "", date: "2020-07-01" });
+  const [filters, setFilters] = useState<FilterState>({
+    rover: "Curiosity",
+    camera: "",
+    date: "2020-07-01",
+  });
   const [page, setPage] = useState(1);
 
-  const API_KEY = process.env.NEXT_PUBLIC_NASA_API_KEY;
+  const API_KEY = process.env.NEXT_PUBLIC_NASA_API_KEY ?? "DEMO_KEY";
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     setLoading(true);
-    let url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${filters.rover.toLowerCase()}/photos?earth_date=${filters.date}&page=${page}&api_key=${API_KEY}`;
-    if (filters.camera) url += `&camera=${filters.camera}`;
+
     try {
-      const res = await fetch(url);
+      const url = new URL(
+        `https://api.nasa.gov/mars-photos/api/v1/rovers/${filters.rover.toLowerCase()}/photos`
+      );
+      url.searchParams.set("earth_date", filters.date);
+      url.searchParams.set("page", String(page));
+      url.searchParams.set("api_key", API_KEY);
+      if (filters.camera) url.searchParams.set("camera", filters.camera);
+
+      const res = await fetch(url.toString());
       const data = await res.json();
-      setPhotos((data.photos || []).slice(0, 24)); // 🔥 pega só 24
+
+      const rawPhotos: RawPhoto[] = Array.isArray(data?.photos) ? data.photos : [];
+
+      const formattedPhotos: Photo[] = rawPhotos
+        .slice(0, 24)
+        .map((p) => ({
+          id: p.id,
+          img_src: p.img_src,
+          earth_date: p.earth_date,
+          camera: { full_name: p.camera.full_name },
+          rover: { name: p.rover.name },
+        }));
+
+      setPhotos(formattedPhotos);
     } catch (error) {
       console.error("Erro ao buscar imagens:", error);
+      setPhotos([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [filters, page, API_KEY]);
 
   useEffect(() => {
     fetchPhotos();
-  }, [filters, page]);
+  }, [fetchPhotos]);
 
   return (
     <main className="min-h-screen flex flex-col" id="topo">
       <Header />
       <div className="flex-1 p-6 bg-gray-50" id="exploracao">
-        <Filters onFilterChange={(f) => { setFilters(f); setPage(1); }} />
+        <Filters
+          onFilterChange={(f) => {
+            setFilters(f);
+            setPage(1);
+          }}
+        />
         <Gallery photos={photos} loading={loading} />
         <Pagination page={page} setPage={setPage} hasMore={photos.length > 0} />
       </div>
@@ -45,5 +94,11 @@ export default function Home() {
     </main>
   );
 }
+
+
+
+
+
+
 
 
