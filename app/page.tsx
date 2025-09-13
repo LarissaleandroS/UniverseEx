@@ -6,8 +6,8 @@ import Footer from "./components/footer";
 import Filters, { FilterState } from "./components/filters";
 import Gallery from "./components/gallery";
 import Pagination from "./components/pagination";
+import Favorites from "./components/favorites"; 
 
-/** Tipo final usado no Gallery */
 export interface Photo {
   id: number;
   img_src: string;
@@ -16,7 +16,6 @@ export interface Photo {
   rover: { name: string };
 }
 
-/** Tipo bruto vindo da API */
 interface RawPhoto {
   id: number;
   img_src: string;
@@ -80,6 +79,8 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col" id="topo">
       <Header />
+
+      {/* Seção de Exploração */}
       <div className="flex-1 p-6 bg-gray-50" id="exploracao">
         <Filters
           onFilterChange={(f) => {
@@ -90,10 +91,20 @@ export default function Home() {
         <Gallery photos={photos} loading={loading} />
         <Pagination page={page} setPage={setPage} hasMore={photos.length > 0} />
       </div>
+
+      {/* Seção de Favoritos */}
+      <div id="favoritos" className="flex-1 p-6 bg-gray-50">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          ⭐ Fotos Favoritas
+        </h2>
+        <Favorites />
+      </div>
+
       <Footer />
     </main>
   );
 }
+
 
 
 
